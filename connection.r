@@ -1,6 +1,9 @@
 library("methods")
 library("DBI")
-source("auth.r")
+library(httr)
+library(jsonlite)
+
+source("auth.R")
 
 setClass("Snowflake",
     contains = "DBIDriver",
@@ -9,7 +12,8 @@ setClass("Snowflake",
 setClass("SnowflakeConnection",
     contains = "DBIConnection",
     slots = c(
-        auth = "ANY"
+        auth = "ANY",
+        host = "character"
     )
 )
 
@@ -20,6 +24,9 @@ setClass("SnowflakeResult",
     contains = "DBIResult",
     slots = c(
         conn = "SnowflakeConnection",
+        statement = "character",
+        params = "ANY",
+        url = "character",
 
         # Keys track of how many rows have actually been returned by snowflake
         # will be -1 if the query has not actally been sent
@@ -45,8 +52,9 @@ setClass("SnowflakeResult",
 
 # We don't actally do anything for keypair auth
 # Possibly we should run a SELECT 1; to verify that we've connected
-setMethod("dbConnect", "Snowflake", function(drv, auth) {
+setMethod("dbConnect", "Snowflake", function(drv, host, auth) {
     new("SnowflakeConnection",
+        host = host,
         auth = auth
     )
 })
@@ -66,7 +74,27 @@ setMethod("dbSendQuery", "SnowflakeConnection",
 
 ############### Result Mehods ################
 
+
+# TODO handle making repeated requests
+# Make the request
 setMethod("dbFetch", "SnowflakeResult",
     function(res, n = -1) {
+
+        base_headers <- c(
+          "Accept" = "application/json",
+          "Content-Type" = "application/json"
+        )
+
+        headers <- set_auth_headers(res@conn@auth, base_headers)
+
+        body <- list(
+            statement = res@statement
+        )
+
+        response <- VERB("POST",
+            url = res@conn@host,
+            body = toJSON(body, auto_unbox = TRUE),
+            add_headers(headers)
+        )
     }
 )
