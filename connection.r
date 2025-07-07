@@ -64,13 +64,13 @@ setMethod("dbConnect", "Snowflake", function(drv, host, auth) {
 # DBI separates sending queries and retreiving data, but Snowflake does not,
 # so this methods does nothing but construct an empty SnowflakeResult object
 
-setMethod("dbSendQuery", "SnowflakeConnection",
-    function(conn, statement, params = NULL, immediate = NULL,
-             warehouse = NULL, database = NULL, schema = NULL, role = NULL,
-             timeout = NULL) {
-        new("SnowflakeResult", conn = conn, statement = statement, params = params)
-    }
-)
+init_connection <- function(
+    conn, statement, params = NULL, immediate = NULL,
+    warehouse = NULL, database = NULL, schema = NULL, role = NULL,
+    timeout = NULL)
+{
+    new("SnowflakeResult", conn = conn, statement = statement, params = params)
+}
 
 ############### Result Mehods ################
 

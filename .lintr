@@ -3,7 +3,8 @@ linters: linters_with_defaults(
     indentation_linter = NULL,
     object_name_linter = NULL,
     commented_code_linter = NULL,
-    quotes_linter = NULL
+    quotes_linter = NULL,
+    brace_linter = brace_linter(allow_single_line = TRUE)
     ) 
 encoding: "UTF-8"
 
