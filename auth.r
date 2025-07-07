@@ -40,14 +40,14 @@ KeyPairAuth <- R6Class("KeyPairAuth",
             self$account_identifier <- account_identifier
             self$private_key_path <- private_key_path
 
-            self$set_expiry_time()
-            self$make_token(username, account_identifier, private_key_path)
+            private$set_expiry_time()
+            private$make_token(username, account_identifier, private_key_path)
         },
 
         set_auth_headers = function(headers) {
             auth_headers <- c(
-              "X-Snowflake-Authorization-Token-Type" = "OAUTH",
-              "Authorization" = paste("Bearer", auth$token)
+              "X-Snowflake-Authorization-Token-Type" = "KEYPAIR_JWT",
+              "Authorization" = paste("Bearer", self$token)
             )
 
             c(headers, auth_headers)
@@ -56,8 +56,8 @@ KeyPairAuth <- R6Class("KeyPairAuth",
         refresh = function() {
             current_time <- as.integer(Sys.time())
             if (current_time > self$expires_at - JWT_REFRESH_TOLERANCE) {
-                self$set_expiry_time()
-                self$make_token(self$username, self$account_identifier, self$private_key_path)
+                private$set_expiry_time()
+                private$make_token(self$username, self$account_identifier, self$private_key_path)
             }
         }
     ),
@@ -93,8 +93,8 @@ KeyPairAuth <- R6Class("KeyPairAuth",
 
         make_token = function(username, account_identifier, private_key_path) {
             private_key_raw <- read_key(private_key_path, der = is.raw(private_key_path))
-            fingerprint <- get_key_fingerprint(private_key_raw)
-            claim <- make_claim(fingerprint, username, account_identifier)
+            fingerprint <- private$get_key_fingerprint(private_key_raw)
+            claim <- private$make_raw_claim(fingerprint, username, account_identifier)
 
             encoded_claim <- jwt_encode_sig(claim, key = as.raw(private_key_raw), size = 256)
             self$token <- encoded_claim
