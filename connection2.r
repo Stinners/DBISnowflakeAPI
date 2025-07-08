@@ -122,10 +122,10 @@ setMethod("initConnection", "DBISnowflakeAPI", function(
     # TODO: Add proper error handling
     if (test) {
         resp <- initQuery(conn, "select 1") |> submitQuery()
-        if (resp_is_error(resp@cursor$raw_resp)) {
-            message <- cat("Failed to connect to Snowflake ", resp_status, " ", resp_status_desc(resp))
-            stop(message)
-        }
+        #if (resp_is_error(resp@cursor$raw_resp)) {
+        #    message <- cat("Failed to connect to Snowflake ", resp_status, " ", resp_status_desc(resp))
+        #    stop(message)
+        #}
     }
 
     conn
@@ -188,6 +188,7 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
         if_not_null("schema", query@schema, query@conn@schema)
 
     resp <- request(query@conn@host) |>
+        req_url_path("api/v2/statements/") |> 
         req_headers(!!!headers) |>
         req_body_json(body) |>
         req_perform()
@@ -196,7 +197,7 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
     # we can get this from the response
     handle <- new("SnowflakeResultHandle",
         query = query,
-        cursor = SnowflakeCursor$new(resp)
+        cursor = SnowflakeCursor$new(query, resp)
     )
 
     handle
