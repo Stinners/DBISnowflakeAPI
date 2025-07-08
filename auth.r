@@ -59,6 +59,7 @@ KeyPairAuth <- R6Class("KeyPairAuth",
                 private$set_expiry_time()
                 private$make_token(self$username, self$account_identifier, self$private_key_path)
             }
+            invisible(self)
         }
     ),
 

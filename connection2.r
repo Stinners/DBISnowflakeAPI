@@ -5,6 +5,8 @@ library(httr2)
 library(jsonlite)
 library(rlang)
 
+source('cursor.r')
+
 # Headers which should be included in every request
 # regardless of authentication method
 BASE_HEADERS <- c(
@@ -82,6 +84,8 @@ setClass("SnowflakeQuery",
 
 ##======================================================================
 
+# TODO: impliment the httr2 response inspection methods for this class
+
 # Represents the results for a query which has been sent, can be used to
 # actually fetch results from Snowflake
 # Handles things like long running queries and result paging
@@ -89,17 +93,6 @@ setClass("SnowflakeResultHandle",
     slots = c(
         query = "SnowflakeQuery",
         cursor = "ANY"               # A SnowflakeCursor R6 object
-    )
-)
-
-##======================================================================
-
-# Tracks the state associated with an in-flight Snowflake Query
-SnowflakeCursor <- R6Class("SnowflakeCursor", list(
-        next_result_url = NA_character_,
-        rows_fetched = 0,
-        rows_requested = 0,
-        buffer = list()
     )
 )
 
@@ -129,7 +122,7 @@ setMethod("initConnection", "DBISnowflakeAPI", function(
     # TODO: Add proper error handling
     if (test) {
         resp <- initQuery(conn, "select 1") |> submitQuery()
-        if (resp_is_error(resp)) {
+        if (resp_is_error(resp@cursor$raw_resp)) {
             message <- cat("Failed to connect to Snowflake ", resp_status, " ", resp_status_desc(resp))
             stop(message)
         }
@@ -200,7 +193,8 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
         req_perform()
 
     # TODO: make the query data on this reflect the actually sent context
-    handle <- new("SnowFlakeResultHandle",
+    # we can get this from the response
+    handle <- new("SnowflakeResultHandle",
         query = query,
         cursor = SnowflakeCursor$new(resp)
     )
