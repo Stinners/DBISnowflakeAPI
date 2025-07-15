@@ -8,11 +8,11 @@ library(chron)
 # Tracks the state associated with an in-flight Snowflake Query
 SnowflakeCursor <- R6Class("SnowflakeCursor",
     public = list(
-        host <- NULL
-        handle <- NULL
+        host = NA_character_,
 
         # The partition info data returned with the first response
-        partitions = NULL,
+        # This is a list which includes the number of entries for each partition
+        partitions = list(),
 
         # The number of partitions which have actually been retrieved by this cursor
         # Note Snowflake uses 0 indexes for partitions
@@ -24,25 +24,45 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
         # The raw data returned by the most recent partition
         buffer = NULL,
 
-        metadata = NULL,
-
-        raw_resp = NULL,
+        # The metadata returned in the first reponse
+        # Includes: numRows, format, partionInfo and rowType fields
+        metadata = list(),
 
         initialize = function(query, resp) {
             json <- resp_body_json(resp)
-            self$raw_resp <- resp
 
             self$host <- query@conn@host
-            self$handle <- resp$statementHandle
             self$partitions <- json$resultSetMetaData$partitionInfo
             self$n_partitions_retreived <- 1 
             self$buffer <- json$data 
             self$metadata <- json$resultSetMetaData$rowType
         },
 
-        get_rows = function(n_rows) {
-            raw_rows <- private$get_raw_rows(n_rows)
+        # use -1 to indicate fetching all rows
+        get_rows = function(n_rows = -1) {
+            raw_rows <- list()
+            
+            # Fetch as many partitons as we need to satisy the row request
+            repeat {
+                # Update how many rows we still need to fetch 
+                if (n_rows != -1) {
+                    to_fetch <- n_rows - length(raw_rows) 
+                }
+                else {
+                    to_fetch <- -1
+                }
 
+                partition_rows <- private$get_raw_rows_from_partition(to_fetch)
+                raw_rows <- c(raw_rows, partition_rows)
+
+                # Check if we need to fetch the next partition
+                last_partition <- self$n_partitions_retreived == length(self$partitonsInfo)
+                done_reading <- n_rows != -1 && length(rows_rows) >= n_rows
+
+                if (last_partition || done_reading) {
+                    break
+                }
+            }
             # Loop and fetch more partitions until we've satisified the row request
             # each time we get a partition add the rows the raw_rows list
 
@@ -52,35 +72,37 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
 
     private = list(
 
-        get_raw_rows = function(n_rows) {
+        get_raw_rows_from_partition = function(n_rows) {
             max_end_row <- length(self$buffer)
+
             # Get Everything
             if (is.na(n_rows) || n_rows == -1) {
                 end_row <- max_end_row
             }
             else {
-                target_end_row <- row_request - self$partition_cursor + 1 
+                target_end_row <- n_rows - self$partition_cursor + 1 
                 end_row <- min(target_end_row, max_end_row)
             }
 
             raw_rows <- self$buffer[self$partition_cursor:end_row]
-            partition_cursor <- self$buffer + length(raw_rows)
+            self$partition_cursor <- self$partition_cursor + length(raw_rows)
 
             raw_rows
-        }
+        },
+
 
         get_next_partition = function() {
-            resp <- request() |>
+            resp <- request(self$host) |>
                 req_url_path(cat("api/v2/statements/", self$statementHandle)) |> 
                 req_url_query(partition=self$n_partitions_retreived) |>
                 req_headers(!!!headers) |>
-                req_body_json(body) |>
                 req_perform()
 
             self$partition_cursor <- 1
             self$n_partitions_retreived <- self$n_partitions_retreived + 1 
             self$buffer <- resp_body_json(resp)$data
-        }
+        },
+
 
         get_type_converter = function(row_metadata) {
             convert <- switch(row_metadata$type,
@@ -102,6 +124,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
             }
         },
 
+
         make_dataframe = function(rows) {
             df <- as.data.frame(do.call(rbind, rows), stringsAsFactors = FALSE)
             colnames(df) <- lapply(self$metadata, function(row) row$name )
@@ -111,7 +134,6 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
                 type_converter <- private$get_type_converter(self$metadata[[i]])
                 df[[i]] = type_converter(df[[i]])
             }
-
             df
         }
 
