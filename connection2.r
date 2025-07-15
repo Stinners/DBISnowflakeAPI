@@ -136,7 +136,7 @@ setGeneric("initQuery", function(conn, statement, ...) standardGeneric("initQuer
 setMethod("initQuery", "SnowflakeConnection", function(
         conn,
         statement,
-        params = list(),
+        bindVars = list(),
         database = NA_character_,
         schema = NA_character_,
         role = NA_character_,
@@ -152,9 +152,12 @@ setMethod("initQuery", "SnowflakeConnection", function(
         )
 })
 
-setGeneric("bindParam<-", function(query, name, value) standardGeneric("bindParam<-"))
-setMethod("bindParam<-", "SnowflakeQuery", function(query, name, value) {
-    query@params[[name]] <- value
+# Snowflake does not support named bind variables 
+# So for now we need to just supply them in order
+setGeneric("bindParam<-", function(query, value) standardGeneric("bindParam<-"))
+setMethod("bindParam<-", "SnowflakeQuery", function(query, value) {
+    i <- length(query@bindVars) + 1
+    query@bindVars[[i]] <- value
     query
 })
 
@@ -168,8 +171,37 @@ if_not_null <- function(lst, name, ...) {
     lst
 }
 
-# TODO: handle refreshing
-# TODO: handle parameters
+getBindVarType <- function(var) {
+    if is.character(var) {
+        return "TEXT"
+    } else if (inherits(var, 'Date')) {   # TODO: figure out how the different datetime types work
+        return 'TIMESTAMP_TZ'
+    } else if (is.numeric(var) {
+        if (as.integer(var) == var) {
+            return "FIXED"
+        } else {
+            return "REAL"
+        }
+    } else if (is.logical(var)) {
+        return "BOOLEAN"
+    } else {
+        stop(cat("Unknown bind variable type ", var))
+    }
+}
+
+# Take the bind variables set in the SnowflakeQuery object and construct the 
+# json body to send to Snowflake
+
+setGeneric("makeBindBody", function(query) standardGeneric("submitQuery"))
+setMethod("makeBindBody", "SnowflakeQuery", function(query) {
+    # TODO make this an apply call 
+    body <- lapply(query@bindVars, function(variable) {
+        list(
+            type = getBindVarType(variable),
+            value = variable
+    })
+})
+
 setGeneric("submitQuery", function(query) standardGeneric("submitQuery"))
 setMethod("submitQuery", "SnowflakeQuery", function(query) {
 
@@ -187,8 +219,12 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
         if_not_null("database", query@database, query@conn@database) |>
         if_not_null("schema", query@schema, query@conn@schema)
 
+    if (length(self@bindVars) > 0) {
+        body[["bindings"]] <- makeBindBody(self) 
+    }
+
     resp <- request(query@conn@host) |>
-        req_url_path("api/v2/statements/") |> 
+        req_url_path("api/v2/statements/") |>
         req_headers(!!!headers) |>
         req_body_json(body) |>
         req_perform()
