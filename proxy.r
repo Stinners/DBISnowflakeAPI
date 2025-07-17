@@ -32,6 +32,7 @@ initProxy <- function(
     }
 
     new("SnowflakeProxy", 
+        host = host,
         port = port, 
         username = username, 
         password = password, 
@@ -39,16 +40,28 @@ initProxy <- function(
     )
 }
 
+# An empty proxy to use a a default - will do nothing 
+# when passed to setProxy
+nullProxy <- new("SnowflakeProxy", host = NA_character_, port = NA_integer_)
+
 setProxy <- function(req, proxy) {
-    if (is.null(proxy)) {
+    if (is.null(proxy) || is.na(proxy@host)) {
         return(req)
     }
-
-    req_proxy(req,
-        url = proxy@host,
-        port = proxy@port,
-        username = proxy@username,
-        password = proxy@password,
-        auth = proxy@auth
-    )
+    else if (!is.na(proxy@username)) {
+        req_proxy(req,
+            url = proxy@host,
+            port = proxy@port,
+            username = proxy@username,
+            password = proxy@password,
+            auth = proxy@auth
+        )
+    }
+    else {
+        req_proxy(req,
+            url = proxy@host,
+            port = proxy@port,
+            auth = proxy@auth
+        )
+    }
 }

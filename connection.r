@@ -23,9 +23,6 @@ setClass("DBISnowflakeAPI",
 
 ##======================================================================
 
-setClassUnion("ProxyOrNull", members = c("SnowflakeProxy", "NULL"))
-
-
 # SnowflakeConnection holds the auth object and handles authenticating
 # With Snowflake, the classes which actually handling creating and running
 # queries will all host a reference to a SnowflakeConnection
@@ -37,7 +34,7 @@ setClass("SnowflakeConnection",
         # to a single auth object and we can refresh tokens in a single central place
         auth = "ANY",
         host = "character",
-        proxy = "ProxyOrNull",
+        proxy = "SnowflakeProxy",
 
         warehouse = "character",
         database = "character",
@@ -46,7 +43,7 @@ setClass("SnowflakeConnection",
     ),
 
     prototype = list(
-        proxy = NULL,
+        proxy = nullProxy,
         warehouse = NA_character_,
         database = NA_character_,
         schema = NA_character_,
@@ -107,7 +104,7 @@ setMethod("initConnection", "DBISnowflakeAPI", function(
     dvr,
     host,
     auth,
-    test = TRUE,
+    testConnection = TRUE,
     database = NA_character_,
     schema = NA_character_,
     role = NA_character_,
@@ -126,15 +123,9 @@ setMethod("initConnection", "DBISnowflakeAPI", function(
         role = role
     )
 
-    # TODO validate how proxy variables are complete
-
     # TODO: Add proper error handling
-    if (test) {
+    if (testConnection) {
         resp <- initQuery(conn, "select 1") |> submitQuery()
-        #if (resp_is_error(resp@cursor$raw_resp)) {
-        #    message <- cat("Failed to connect to Snowflake ", resp_status, " ", resp_status_desc(resp))
-        #    stop(message)
-        #}
     }
 
     conn
@@ -242,12 +233,14 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
     req <- request(query@conn@host) |>
         req_url_path("api/v2/statements/") |>
         req_headers(!!!headers) |>
-        req_body_json(body) |> 
-        setProxy(query@conn@proxy) |> 
-        req_perform()
+        req_body_json(body) |>
+        setProxy(query@conn@proxy)
+
+    resp <- req_perform(req)
+
 
     # TODO: make the query data on this reflect the actually sent context
-    # we can get this from the response
+    # we can get this from the request
     handle <- new("SnowflakeResultHandle",
         query = query,
         cursor = SnowflakeCursor$new(query, resp)
