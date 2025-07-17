@@ -91,6 +91,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
         },
 
 
+        # TODO: add proxy information
         get_next_partition = function() {
             resp <- request(self$host) |>
                 req_url_path(cat("api/v2/statements/", self$statementHandle)) |> 
