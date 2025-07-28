@@ -196,7 +196,6 @@ getBindVarType <- function(var) {
 
 # Take the bind variables set in the SnowflakeQuery object and construct the 
 # json body to send to Snowflake
-
 setGeneric("makeBindBody", function(query) standardGeneric("makeBindBody"))
 setMethod("makeBindBody", "SnowflakeQuery", function(query) {
     # TODO make this an apply call 
@@ -208,6 +207,7 @@ setMethod("makeBindBody", "SnowflakeQuery", function(query) {
     )
 })
 
+# Actually send the query to Snowflake
 setGeneric("submitQuery", function(query) standardGeneric("submitQuery"))
 setMethod("submitQuery", "SnowflakeQuery", function(query) {
 
