@@ -1,18 +1,19 @@
 library(R6)
 library(jose)
+library(rlang)
 suppressMessages(library(openssl)) # linking messages
 suppressMessages(library(digest))  # masks the sha1 function from openssl
 
 # An abstract base class for different kinds of authetication
 AbstractSnowflakeAuth <- R6Class("AbstractSnowflakeAuth", list(
-    initialize = function(...) stop("AbstractSnowflakeAuth cannot be directly inititialized"),
+    initialize = function(...) abort("AbstractSnowflakeAuth cannot be directly inititialized"),
 
     set_auth_headers = function(headers) {
-        stop(cat("set_auth_headers is not implimented for ", class(self)[1]))
+        abort(cat("set_auth_headers is not implimented for ", class(self)[1]))
     },
 
     refresh = function() {
-        stop(cat("refresh is not implimented for ", class(self)[1]))
+        abort(cat("refresh is not implimented for ", class(self)[1]))
     }
 ))
 

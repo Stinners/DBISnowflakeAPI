@@ -37,6 +37,17 @@ DBIQueryInner <- R6Class("DBIQueryInner",
 
             get_rows(nRows)
         },
+
+        bind = function(res, params) {
+            if (private$submitted) {
+                warning("Cannot add bind variables to a query after it has been submitted")
+                return 
+            }
+
+            for (param in params) {
+                bindParam(private$query) <- value
+            }
+        }
     ),
 
     private = list(

@@ -1,6 +1,7 @@
 library(R6)
 library(httr2)
 library(chron)
+library(rlang)
 
 # This should only get constructed when a query is successful, any error handling should 
 # be handled in the in th SnowflakeResultHandle class wrapping this
@@ -112,7 +113,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
                 "date" = function(x) as.Date(as.integer(x)),
                 # This hasn't been tested with real data
                 "timestamp_ntz" = as.chron,
-                stop(cat("Unknown type ", row_metadata$type))
+                abort(cat("Unknown type ", row_metadata$type))
             )
 
             # There must be a better way to handle nulls

@@ -15,7 +15,7 @@ BASE_HEADERS <- c(
   "Content-Type" = "application/json"
 )
 
-# This is purely just a marker class to implimentent DbiDriver
+# This is purely a marker class to implimentent DbiDriver
 # and drive the dbConnect function
 setClass("DBISnowflakeAPI",
          contains = "DBIDriver"
@@ -34,7 +34,7 @@ setClass("SnowflakeConnection",
         # to a single auth object and we can refresh tokens in a single central place
         auth = "ANY",
         host = "character",
-        proxy = "SnowflakeProxy",
+        proxy = "ANY",
 
         warehouse = "character",
         database = "character",
@@ -190,7 +190,7 @@ getBindVarType <- function(var) {
         return("BOOLEAN")
     } 
     else {
-        stop(cat("Unknown bind variable type ", var))
+        abort(cat("Unknown bind variable type ", var))
     }
 }
 

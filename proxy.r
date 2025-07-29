@@ -1,5 +1,6 @@
 library(methods)
 library(httr2)
+library(rlang)
 
 
 setClass("SnowflakeProxy",
@@ -28,7 +29,7 @@ initProxy <- function(
     allowed_auth_types <- c("basic", "digest", "digest_ie", "gssnegotiate", "ntlm", "any")
 
     if (! auth %in% allowed_auth_types) {
-        stop(cat("Auth method '", auth, "' is invalid - allowed types are: ", allowed_auth_types))
+        abort(cat("Auth method '", auth, "' is invalid - allowed types are: ", allowed_auth_types))
     }
 
     new("SnowflakeProxy", 
