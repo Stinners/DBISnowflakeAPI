@@ -58,7 +58,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
 
                 # Check if we need to fetch the next partition
                 last_partition <- self$n_partitions_retreived == length(self$partitonsInfo)
-                done_reading <- n_rows != -1 && length(rows_rows) >= n_rows
+                done_reading <- n_rows != -1 && length(raw_rows) >= n_rows
 
                 if (last_partition || done_reading) {
                     break

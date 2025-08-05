@@ -24,7 +24,7 @@ DBIQueryInner <- R6Class("DBIQueryInner",
         },
 
         submitQuery = function() {
-            cursor <- submitQuery(query)
+            cursor <- submitQuery(private$query)
 
             private$cursor <- cursor 
             private$submitted <- TRUE
@@ -35,7 +35,7 @@ DBIQueryInner <- R6Class("DBIQueryInner",
                 self$submitQuery()
             }
 
-            get_rows(nRows)
+            private$cursor$get_rows(nRows)
         },
 
         bind = function(res, params) {
