@@ -44,10 +44,8 @@ setMethod(
 # dbSendStatement - we use the default implimentation
 # dbExecute - we use the default implimentation
 
-# TODO: dbQuoteString
-# TODO: dbQuoteIdentifier
+# dbQuoteString - use the default implimentation
 
-# TODO: test this
 setMethod("dbQuoteIdentifier", signature(conn = "SnowflakeConnection", x = "Id"),
     function(conn, x, ...) {
         quoteFunc <- function(val)  dbQuoteIdentifier(conn, val)
@@ -59,7 +57,35 @@ setMethod("dbQuoteIdentifier", signature(conn = "SnowflakeConnection", x = "Id")
 
 setMethod("dbQuoteIdentifier", signature(conn = "SnowflakeConnection", x = "character"),
     function(conn, x, ...) {
-        quoted <- cat("\"", x, "\"")
+        quoted <- paste0("\"", x, "\"")
         return(SQL(toupper(quoted)))
     }
 )
+
+# TODO: test this 
+# TODO: impliment the check.names parameter
+setMethod("dbReadTable", "SnowflakeConnection", function(conn, name, ...) {
+    quoted_name <- dbQuoteIdentifier(name)
+    query_text <- paste("SELECT * FROM", quoted_name, ";")
+    query <- dbSendQuery(conn, query_text)
+    df <- dfFetch(query)
+
+    opt <- list(...)
+    row.names <- opt[["row.names"]]
+    if (isTRUE(row.names)) {
+        row.names(df) <- df[["row_names"]]
+    }
+    else if (is.na(row.names)) {
+        if ("row_names" %in% df) {
+            row.names(df) <- df[["row_names"]]
+        }
+    }
+    else if (is.character(row.names)) {
+        row.names(df) <- df[[row.names]]
+    }
+    else if (!(isFALSE(row.names) && is.null(row.names))) {
+        abort(paste("row.name argument of dbReadTable must be a boolean or a character, but was:", row.names))
+    }
+
+    return(df)
+})

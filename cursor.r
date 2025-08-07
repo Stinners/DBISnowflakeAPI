@@ -95,7 +95,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
         # TODO: add proxy information
         get_next_partition = function() {
             resp <- request(self$host) |>
-                req_url_path(cat("api/v2/statements/", self$statementHandle)) |> 
+                req_url_path(paste("api/v2/statements/", self$statementHandle)) |> 
                 req_url_query(partition=self$n_partitions_retreived) |>
                 req_headers(!!!headers) |>
                 req_perform()
@@ -106,6 +106,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
         },
 
 
+        # TODO: make sure this covers the full range of Snowflake types
         get_type_converter = function(row_metadata) {
             convert <- switch(row_metadata$type,
                 "text" = as.character,
@@ -113,7 +114,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
                 "date" = function(x) as.Date(as.integer(x)),
                 # This hasn't been tested with real data
                 "timestamp_ntz" = as.chron,
-                abort(cat("Unknown type ", row_metadata$type))
+                abort(paste("Unknown type ", row_metadata$type))
             )
 
             # There must be a better way to handle nulls

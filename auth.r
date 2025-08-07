@@ -9,11 +9,11 @@ AbstractSnowflakeAuth <- R6Class("AbstractSnowflakeAuth", list(
     initialize = function(...) abort("AbstractSnowflakeAuth cannot be directly inititialized"),
 
     set_auth_headers = function(headers) {
-        abort(cat("set_auth_headers is not implimented for ", class(self)[1]))
+        abort(paste("set_auth_headers is not implimented for ", class(self)[1]))
     },
 
     refresh = function() {
-        abort(cat("refresh is not implimented for ", class(self)[1]))
+        abort(paste("refresh is not implimented for ", class(self)[1]))
     }
 ))
 
