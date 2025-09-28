@@ -104,7 +104,7 @@ setMethod("submitQuery", "SnowflakeQuery", function(query) {
 
 
     if (length(query@bindVars) > 0) {
-        body[["bindings"]] <- makeBindBody(query)
+        body[["bindings"]] <- makeBindBody(query) # TODO: impliment this
     }
 
     req <- request(query@conn@host) |>
@@ -151,5 +151,4 @@ setMethod("initConnection", "DBISnowflakeAPI", function(
 
     conn
 })
-
 
