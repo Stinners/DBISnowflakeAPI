@@ -1,0 +1,23 @@
+Package: DBISnowflakeAPI
+Title: Pure R Interface with the Snowflake SQL API
+Version: 0.0.0.9000
+Authors@R: 
+    person("Chris", "Stinson", , "chris.stinson@example.com",
+        role = c("aut", "cre"), comment = c(ORCID = "0009-0003-1842-3327"))
+Description: What the package does (one paragraph).
+License: LGPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    chron,
+    DBI,
+    httr2,
+    jose,
+    jsonlite,
+    methods,
+    R6,
+    rlang

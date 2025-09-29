@@ -42,7 +42,7 @@ SnowflakeCursor <- R6Class("SnowflakeCursor",
         # use -1 to indicate fetching all rows
         get_rows = function(n_rows = -1) {
             raw_rows <- list()
-            
+           
             # Fetch as many partitons as we need to satisy the row request
             repeat {
                 # Update how many rows we still need to fetch 
